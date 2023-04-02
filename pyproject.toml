@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "lines-py"
+version = "0.1.0"
+description = "Lines in Python with PyGame"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "lines_py"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pygame = "^2.1.2"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "*"
+black = "*"
+isort = "*"
+pylint = "*"
+flake8 = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
