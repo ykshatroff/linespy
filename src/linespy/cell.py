@@ -24,3 +24,6 @@ class Cell:
     @property
     def is_empty(self) -> bool:
         return self.color is None
+
+    def __repr__(self):
+        return f"Cell({self.column}, {self.row})"

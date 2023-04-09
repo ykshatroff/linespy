@@ -1,8 +1,10 @@
 import time
+from typing import Sequence
 
 import pygame
 from pygame import Surface
 
+import linespy.events
 from linespy.board import Board
 from linespy.cell import Cell
 from linespy.constants import (
@@ -15,6 +17,7 @@ from linespy.constants import (
     SCREEN_BACKGROUND_COLOR,
     SCREEN_SIZE,
 )
+from linespy.errors import CoordinatesBeyondGridError
 
 
 def draw_grid(screen: Surface):
@@ -40,6 +43,63 @@ def draw_ball(screen: Surface, cell: Cell) -> None:
     )
 
 
+def draw_selected_ball(screen: Surface, cell: Cell) -> None:
+    """Draws an outline around the selected ball."""
+    center_y = (cell.row - 1) * CELL_HEIGHT + (CELL_HEIGHT // 2)
+    center_x = (cell.column - 1) * CELL_WIDTH + (CELL_WIDTH // 2)
+
+    pygame.draw.circle(
+        screen, color="white", center=(center_x, center_y), radius=BALL_RADIUS, width=3
+    )
+
+
+def clear_cell(screen: Surface, cell: Cell) -> None:
+    """Clears the cell from a ball image."""
+
+    # Add 1 for the grid line thickness.
+    top_y = 1 + (cell.row - 1) * CELL_HEIGHT
+    left_x = 1 + (cell.column - 1) * CELL_WIDTH
+
+    # NOTE: pygame.Rect doesn't support keyword arguments.
+    rect = pygame.Rect(left_x, top_y, CELL_WIDTH - 1, CELL_HEIGHT - 1)
+    screen.fill(SCREEN_BACKGROUND_COLOR, rect)
+
+
+def get_cell_column_and_row_by_screen_coords(x: int, y: int) -> tuple[int, int]:
+    """Transforms screen coordinates to board coordinates.
+
+    If clicked outside the board's grid, raises an error.
+    """
+    column = x // CELL_WIDTH + 1
+    row = y // CELL_HEIGHT + 1
+    if column > NUM_COLUMNS or row > NUM_ROWS:
+        raise CoordinatesBeyondGridError
+    return column, row
+
+
+def handle_board_events(
+    screen: Surface, events: Sequence[linespy.events.Event]
+) -> None:
+    for event in events:
+        match event:
+            case linespy.events.ImpossibleMove():
+                # TODO: play sound or otherwise signal to player that the move is impossible.
+                return
+            case linespy.events.SelectBall(cell=cell):
+                # This matches the event's `cell` attribute to the local variable `cell`.
+                draw_selected_ball(screen, cell)
+            case linespy.events.DeselectBall(cell=cell):
+                # Just redraw a regular ball.
+                draw_ball(screen, cell)
+            case linespy.events.MoveBall(from_cell=from_cell, to_cell=to_cell):
+                clear_cell(screen, from_cell)
+                draw_ball(screen, to_cell)
+            case _:
+                raise TypeError(f"Unknown event {event.__class__.__name__}")
+        # after each update to the screen, re-draw it
+        pygame.display.flip()
+
+
 def main():
     pygame.init()
     screen = pygame.display.set_mode(SCREEN_SIZE)
@@ -63,7 +123,18 @@ def main():
         for event in pygame.event.get():
             match event.type:
                 case pygame.MOUSEBUTTONUP:
-                    print("Clicked", event.pos)
+                    try:
+                        column, row = get_cell_column_and_row_by_screen_coords(
+                            *event.pos
+                        )
+                    except CoordinatesBeyondGridError:
+                        print("Clicked", event.pos)
+                        continue
+                    print("Clicked cell", column, row)
+
+                    # handle player action
+                    board_events = board.handle_action(column, row)
+                    handle_board_events(screen, board_events)
 
                 case pygame.QUIT:
                     running = False

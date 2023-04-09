@@ -4,3 +4,7 @@ class LinesPyError(Exception):
 
 class NoMoreFreeCellsError(LinesPyError):
     """Raised when no more balls can be added."""
+
+
+class CoordinatesBeyondGridError(LinesPyError):
+    """Raised when screen-based pixel coordinates are outside of the board's grid."""
