@@ -47,9 +47,13 @@ class Board:
         """Gets a cell by given tuple of (column, row) coordinates (1-based)."""
         column, row = column_and_row
         if not 1 <= column <= self.columns:
-            raise KeyError(f"Invalid column number {column}, must be between 1 and {self.columns}")
+            raise KeyError(
+                f"Invalid column number {column}, must be between 1 and {self.columns}"
+            )
         if not 1 <= row <= self.rows:
-            raise KeyError(f"Invalid row number {row}, must be between 1 and {self.rows}")
+            raise KeyError(
+                f"Invalid row number {row}, must be between 1 and {self.rows}"
+            )
         return self.cells[(column - 1) + (row - 1) * self.columns]
 
     @classmethod
@@ -139,11 +143,7 @@ class Board:
         if not path:
             return [ImpossibleMove()]
 
-        events: list[Event] = []
-        for pos, cell in enumerate(path[1:], 1):
-            # make an event with source cell being the previous cell in path,
-            # and destination cell being the current one.
-            events.append(MoveBall(from_cell=path[pos - 1], to_cell=cell))
+        events: list[Event] = [MoveBall(path=path)]
 
         formed_lines = self._evaluate_lines(to_cell)
         if formed_lines:

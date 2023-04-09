@@ -9,6 +9,7 @@ from linespy.board import Board
 from linespy.cell import Cell
 from linespy.constants import (
     BALL_RADIUS,
+    BallColor,
     CELL_HEIGHT,
     CELL_WIDTH,
     GRID_LINE_COLOR,
@@ -30,8 +31,9 @@ def draw_grid(screen: Surface):
         pygame.draw.line(screen, GRID_LINE_COLOR, (0, y), (360, y))
 
 
-def draw_ball(screen: Surface, cell: Cell) -> None:
-    color = cell.color
+def draw_ball(screen: Surface, cell: Cell, color: BallColor | None = None) -> None:
+    if color is None:
+        color = cell.color
     if color is None:
         return
 
@@ -106,9 +108,17 @@ def handle_board_events(
             case linespy.events.DeselectBall(cell=cell):
                 # Just redraw a regular ball.
                 draw_ball(screen, cell)
-            case linespy.events.MoveBall(from_cell=from_cell, to_cell=to_cell):
-                clear_cell(screen, from_cell)
-                draw_ball(screen, to_cell)
+            case linespy.events.MoveBall(path=path):
+                *_, destination_cell = path
+                color = destination_cell.color
+
+                cell, *path = path
+                while path:
+                    clear_cell(screen, cell)
+                    cell, *path = path
+                    draw_ball(screen, cell, color)
+                    pygame.display.flip()
+                    pygame.time.wait(100)
             case _:
                 raise TypeError(f"Unknown event {event.__class__.__name__}")
         # after each update to the screen, re-draw it

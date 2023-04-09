@@ -72,13 +72,9 @@ class DeselectBall(Event):
 
 @dataclasses.dataclass
 class MoveBall(Event):
-    """Points to cells from which and to which the ball is moved.
+    """Points to a sequence of cells by which the ball is moved."""
 
-    This is a simplified event, for demo purposes - it doesn't contain the full path.
-    """
-
-    from_cell: Cell
-    to_cell: Cell
+    path: Sequence[Cell]
 
 
 @dataclasses.dataclass
