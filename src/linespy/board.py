@@ -5,7 +5,15 @@ from typing import Self, Sequence
 from linespy.cell import Cell
 from linespy.constants import BallColor
 from linespy.errors import NoMoreFreeCellsError
-from linespy.events import DeselectBall, Event, ImpossibleMove, MoveBall, SelectBall
+from linespy.events import (
+    AddBall,
+    DeselectBall,
+    Event,
+    GameOver,
+    ImpossibleMove,
+    MoveBall,
+    SelectBall,
+)
 
 
 @dataclasses.dataclass
@@ -54,7 +62,7 @@ class Board:
         ]
         return cls(cells=cells, columns=columns, rows=rows)
 
-    def add_random_ball(self) -> Cell:
+    def _add_random_ball(self) -> Cell:
         free_cells = [cell for cell in self.cells if cell.is_empty]
         if not free_cells:
             raise NoMoreFreeCellsError
@@ -64,6 +72,22 @@ class Board:
 
         target_cell.color = color
         return target_cell
+
+    def _add_balls(self) -> Sequence[AddBall | GameOver]:
+        """Adds 3 random balls."""
+        events: list[AddBall | GameOver] = []
+        for _ in range(3):
+            events.append(AddBall(cell=self._add_random_ball()))
+            # If there are no empty cells left, add a GameOver event
+            #  and stop adding balls.
+            if not any(cell for cell in self.cells if cell.is_empty):
+                events.append(GameOver())
+                break
+        return events
+
+    def handle_initialization(self) -> Sequence[Event]:
+        """Produces events on board initialization."""
+        return self._add_balls()
 
     def handle_action(self, column: int, row: int) -> Sequence[Event]:
         """Processes player click on a cell, emitting events.
@@ -111,11 +135,14 @@ class Board:
         if not path:
             return [ImpossibleMove()]
 
-        events: list[MoveBall] = []
+        events: list[MoveBall | AddBall | GameOver] = []
         for pos, cell in enumerate(path[1:], 1):
             # make an event with source cell being the previous cell in path,
             # and destination cell being the current one.
             events.append(MoveBall(from_cell=path[pos - 1], to_cell=cell))
+
+        # add new balls after a move
+        events += self._add_balls()
         return events
 
     def _evaluate_path(self, from_cell: Cell, to_cell: Cell) -> Sequence[Cell]:

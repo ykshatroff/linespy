@@ -79,12 +79,21 @@ def get_cell_column_and_row_by_screen_coords(x: int, y: int) -> tuple[int, int]:
 
 def handle_board_events(
     screen: Surface, events: Sequence[linespy.events.Event]
-) -> None:
+) -> bool:
+    """Handles game board events and returns whether the game continues or not."""
     for event in events:
         match event:
+            case linespy.events.GameOver():
+                # TODO: play sound or otherwise signal to player that the game is over.
+                return False
             case linespy.events.ImpossibleMove():
                 # TODO: play sound or otherwise signal to player that the move is impossible.
-                return
+                return True
+            case linespy.events.AddBall(cell=cell):
+                # Draw a ball to given cell.
+                draw_ball(screen, cell)
+                # Make a pause before rendering.
+                pygame.time.wait(100)
             case linespy.events.SelectBall(cell=cell):
                 # This matches the event's `cell` attribute to the local variable `cell`.
                 draw_selected_ball(screen, cell)
@@ -99,6 +108,8 @@ def handle_board_events(
         # after each update to the screen, re-draw it
         pygame.display.flip()
 
+    return True
+
 
 def main():
     pygame.init()
@@ -108,14 +119,10 @@ def main():
     draw_grid(screen)
     pygame.display.flip()
 
-    # init the board and add a few balls
+    # init the board and handle initial events, such as adding a few balls
     board = Board.create(columns=NUM_COLUMNS, rows=NUM_ROWS)
-    for _ in range(3):
-        cell = board.add_random_ball()
-        draw_ball(screen, cell)
-        # after each update to the screen, re-draw it
-        pygame.display.flip()
-        pygame.time.wait(50)
+    initial_events = board.handle_initialization()
+    handle_board_events(screen, initial_events)
 
     running = True
 
@@ -134,7 +141,9 @@ def main():
 
                     # handle player action
                     board_events = board.handle_action(column, row)
-                    handle_board_events(screen, board_events)
+                    running = handle_board_events(screen, board_events)
+                    if not running:
+                        print("Game over!")
 
                 case pygame.QUIT:
                     running = False

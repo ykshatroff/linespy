@@ -49,6 +49,18 @@ class Event:
 
 
 @dataclasses.dataclass
+class AddBall(Event):
+    """Points to a cell where a new ball is added."""
+
+    cell: Cell
+
+
+@dataclasses.dataclass
+class GameOver(Event):
+    """Emitted when no more empty cells are left on the board."""
+
+
+@dataclasses.dataclass
 class SelectBall(Event):
     cell: Cell
 
