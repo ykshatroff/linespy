@@ -92,8 +92,8 @@ def handle_board_events(
                 # TODO: play sound or otherwise signal to player that the move is impossible.
                 return True
             case linespy.events.LineCompleted(cells):
-                # TODO: clear the specified cells
-                pass
+                for cell in cells:
+                    clear_cell(screen, cell)
             case linespy.events.UpdateScore(score=score):
                 # TODO: display player's new score on the HUD (create one!)
                 print(f"New score: {score}")

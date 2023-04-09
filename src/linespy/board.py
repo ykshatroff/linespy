@@ -147,12 +147,17 @@ class Board:
 
         formed_lines = self._evaluate_lines(to_cell)
         if formed_lines:
+            for cell in formed_lines:
+                cell.color = None
+
             events.append(LineCompleted(cells=formed_lines))
+
             # Use a simple counter of removed balls as score.
             # It can also be more sophisticated, such as:
             # * a premium for each ball above 5,
             # * a progressive premium (2 for 6th ball, 3 for 7th etc.)
-            events.append(UpdateScore(score=len(formed_lines)))
+            self.score += len(formed_lines)
+            events.append(UpdateScore(self.score))
 
         else:
             # add new balls after a move that did not result in forming a line
@@ -187,14 +192,40 @@ class Board:
         # This implicitly calls Board.__getitem__().
         assert self[cell.column, cell.row] is cell
 
-        # TODO: implement the evaluation of lines.
-        #  If there are straight lines of balls of the same color as given cell,
-        #  that the given cell is part of, horizontally, vertically, or diagonally,
-        #  return a list of all those cells that form these lines.
-        #  Add to the score
-        #
-        # TODO: An optional extra task (once the above is done):
-        #  support multiple LineCompleted events, for each line that is formed
-        #  when placing the ball (up to 4 - vertical, horizontal and 2 diagonals).
+        v_line = [cell]
+        for row in range(cell.row - 1, 0, -1):
+            next_cell_up = self[cell.column, row]
+            if next_cell_up.color == cell.color:
+                v_line.insert(0, next_cell_up)
+            else:
+                break
+        for row in range(cell.row + 1, self.rows + 1, 1):
+            next_cell_down = self[cell.column, row]
+            if next_cell_down.color == cell.color:
+                v_line.append(next_cell_down)
+            else:
+                break
 
-        return []
+        h_line = [cell]
+        for column in range(cell.column - 1, 0, -1):
+            next_cell_left = self[column, cell.row]
+            if next_cell_left.color == cell.color:
+                h_line.insert(0, next_cell_left)
+            else:
+                break
+        for column in range(cell.column + 1, self.columns + 1, 1):
+            next_cell_right = self[column, cell.row]
+            if next_cell_right.color == cell.color:
+                h_line.append(next_cell_right)
+            else:
+                break
+
+        # TODO: add diagonal lines
+
+        result = []
+        if len(h_line) >= MIN_BALLS_IN_LINE:
+            result += h_line
+        if len(v_line) >= MIN_BALLS_IN_LINE:
+            result += v_line
+
+        return result
