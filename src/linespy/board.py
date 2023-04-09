@@ -3,7 +3,7 @@ import random
 from typing import Self, Sequence
 
 from linespy.cell import Cell
-from linespy.constants import BallColor
+from linespy.constants import MIN_BALLS_IN_LINE, BallColor
 from linespy.errors import NoMoreFreeCellsError
 from linespy.events import (
     AddBall,
@@ -11,8 +11,10 @@ from linespy.events import (
     Event,
     GameOver,
     ImpossibleMove,
+    LineCompleted,
     MoveBall,
     SelectBall,
+    UpdateScore,
 )
 
 
@@ -39,6 +41,7 @@ class Board:
     columns: int
     rows: int
     selected_cell: Cell | None = None
+    score: int = 0
 
     def __getitem__(self, column_and_row: tuple[int, int]) -> Cell:
         """Gets a cell by given tuple of (column, row) coordinates (1-based)."""
@@ -135,11 +138,20 @@ class Board:
         if not path:
             return [ImpossibleMove()]
 
-        events: list[MoveBall | AddBall | GameOver] = []
+        events: list[Event] = []
         for pos, cell in enumerate(path[1:], 1):
             # make an event with source cell being the previous cell in path,
             # and destination cell being the current one.
             events.append(MoveBall(from_cell=path[pos - 1], to_cell=cell))
+
+        formed_lines = self._evaluate_lines(to_cell)
+        if formed_lines:
+            events.append(LineCompleted(cells=formed_lines))
+            # Use a simple counter of removed balls as score.
+            # It can also be more sophisticated, such as:
+            # * a premium for each ball above 5,
+            # * a progressive premium (2 for 6th ball, 3 for 7th etc.)
+            events.append(UpdateScore(score=len(formed_lines)))
 
         # add new balls after a move
         events += self._add_balls()
@@ -164,3 +176,23 @@ class Board:
         to_cell.color = from_cell.color
         from_cell.color = None
         return [from_cell, to_cell]
+
+    def _evaluate_lines(self, cell: Cell) -> Sequence[Cell]:
+        """Evaluates completed lines and returns cells belonging to them."""
+
+        # We can use self[column, row] to access cells, allowing for simple iteration
+        #  over cells in one row or column.
+        # This implicitly calls Board.__getitem__().
+        assert self[cell.column, cell.row] is cell
+
+        # TODO: implement the evaluation of lines.
+        #  If there are straight lines of balls of the same color as given cell,
+        #  that the given cell is part of, horizontally, vertically, or diagonally,
+        #  return a list of all those cells that form these lines.
+        #  Add to the score
+        #
+        # TODO: An optional extra task (once the above is done):
+        #  support multiple LineCompleted events, for each line that is formed
+        #  when placing the ball (up to 4 - vertical, horizontal and 2 diagonals).
+
+        return []

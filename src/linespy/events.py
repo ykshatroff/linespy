@@ -89,6 +89,13 @@ class LineCompleted(Event):
 
 
 @dataclasses.dataclass
+class UpdateScore(Event):
+    """Contains player's new score."""
+
+    score: int
+
+
+@dataclasses.dataclass
 class ImpossibleMove(Event):
     """Signifies that there is no path from one cell to another.
 
