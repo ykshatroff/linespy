@@ -106,8 +106,9 @@ class Board:
                     from_cell=self.selected_cell, to_cell=cell
                 )
 
-                # the selected ball becomes deselected after the move.
-                self.selected_cell = None
+                if events != [ImpossibleMove()]:
+                    # the selected ball becomes deselected after a successful move.
+                    self.selected_cell = None
                 return events
 
         events = []
