@@ -171,9 +171,62 @@ class Board:
         and up to and including the destination cell.
         If a path doesn't exist, return an empty list.
         """
-        # NOTE: in the absence of an implementation, this just returns
-        #  the origin and destination cells, thus making any move possible.
-        # TODO: use the shortest path algorithm to find a path.
+
+        # Reset any attributes left from previous path evaluation
+        for cell in self.cells:
+            cell.cost = None
+            cell.previous_cell = None
+
+        # The distance cost for the starting cell is 0.
+        from_cell.cost = 0
+        stack = [from_cell]
+
+        def visit_cell(cell: Cell, previous_cell: Cell) -> None:
+            assert previous_cell.cost is not None, "Previous cell should have been visited."
+            if cell.is_empty:
+                if cell.cost is None or cell.cost > previous_cell.cost + 1:
+                    # Put the cell on the main pipeline queue
+                    stack.append(cell)
+                    cell.previous_cell = previous_cell
+                    cell.cost = previous_cell.cost + 1
+
+        while stack:
+            last_cell = stack.pop()
+            try:
+                cell_up = self[last_cell.column, last_cell.row - 1]
+            except KeyError:
+                pass
+            else:
+                visit_cell(cell_up, last_cell)
+            try:
+                cell_down = self[last_cell.column, last_cell.row + 1]
+            except KeyError:
+                pass
+            else:
+                visit_cell(cell_down, last_cell)
+            try:
+                cell_left = self[last_cell.column - 1, last_cell.row]
+            except KeyError:
+                pass
+            else:
+                visit_cell(cell_left, last_cell)
+            try:
+                cell_right = self[last_cell.column + 1, last_cell.row]
+            except KeyError:
+                pass
+            else:
+                visit_cell(cell_right, last_cell)
+
+        if to_cell.previous_cell is None:
+            # We weren't able to find a path from target to source.
+            return []
+
+        path = [to_cell]
+        start_cell: Cell | None = to_cell
+        while (start_cell := start_cell.previous_cell) is not None:
+            path.insert(0, start_cell)
+
+        assert path[0] is from_cell, "We should get back to the starting cell."
 
         # Swap cell colors.
         # When we visualize the full path, we don't need to swap colors
@@ -182,7 +235,8 @@ class Board:
         #  since it is only a detail relevant to the display.
         to_cell.color = from_cell.color
         from_cell.color = None
-        return [from_cell, to_cell]
+
+        return path
 
     def _evaluate_lines(self, cell: Cell) -> Sequence[Cell]:
         """Evaluates completed lines and returns cells belonging to them."""

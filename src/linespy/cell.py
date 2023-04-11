@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Self
 
 from linespy.constants import BallColor
 
@@ -15,11 +16,15 @@ class Cell:
         row: row number, 1-based, starting from top
         column: column number, 1-based, starting from left
         color: one of an enumeration of available colors, or None if cell is empty
+        cost: the distance cost from target cell, when looking for the shortest path.
+        previous_cell: the previous cell in the shortest path, if any.
     """
 
     row: int
     column: int
     color: BallColor | None = None
+    cost: int | None = None
+    previous_cell: Self | None = None
 
     @property
     def is_empty(self) -> bool:
