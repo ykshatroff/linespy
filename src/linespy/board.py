@@ -154,8 +154,9 @@ class Board:
             # * a progressive premium (2 for 6th ball, 3 for 7th etc.)
             events.append(UpdateScore(score=len(formed_lines)))
 
-        # add new balls after a move
-        events += self._add_balls()
+        else:
+            # add new balls after a move that did not result in forming a line
+            events += self._add_balls()
         return events
 
     def _evaluate_path(self, from_cell: Cell, to_cell: Cell) -> Sequence[Cell]:
